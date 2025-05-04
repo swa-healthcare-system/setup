@@ -72,10 +72,11 @@ services:
       - fluentd-net
 
  eureka-server:
-    build:
-      context: ./eureka-server
-      dockerfile: Dockerfile
+#    build:
+#      context: ./eureka-server
+#      dockerfile: Dockerfile
     container_name: eureka-server
+    image: andrei839/swa_eureka_server:latest
     ports:
       - "8761:8761"
     environment:
