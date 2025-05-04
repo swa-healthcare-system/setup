@@ -282,11 +282,11 @@ services:
 
      # Quarkus Java Application Service
  patient-service:
-   build:
-     context: ./patient-service/patient-service  # Set build context to the root directory of your project
-     dockerfile: Dockerfile.jvm  # Path to the Dockerfile
+#   build:
+#     context: .  # Set build context to the root directory of your project
+#     dockerfile: Dockerfile.jvm  # Path to the Dockerfile
    container_name: patient-service
-#   image: patient-service:latest  # <-- This is the image name
+   image: shakuspyr/patient-service:latest  # <-- This is the image name
    environment:
      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017/?directConnection=true
      - QUARKUS_MONGODB_DATABASE=patient-service
