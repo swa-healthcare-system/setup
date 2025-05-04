@@ -156,7 +156,7 @@ services:
    ports:
      - "5556:5432"
    volumes:
-     - "postgres-data:/var/lib/postgresql/data"
+     - "postgres-data-notifications:/var/lib/postgresql/data"
      - "./init-scripts:/docker-entrypoint-initdb.d"
    environment:
      - POSTGRES_URL=jdbc:postgresql://notification-service-db:5432/notifications
@@ -174,7 +174,7 @@ services:
      - kafka
      - config-server
    ports:
-     - "8080:8080"
+     - "8073:8080"
    environment:
      EUREKA_URL: http://eureka-server:8761/eureka
      SPRING_PROFILES_ACTIVE: default
@@ -186,48 +186,50 @@ services:
      - shared-net
 
 #TODO fix appointment service database problem
-# postgres:
-#    restart: unless-stopped
-#    image: postgres:10
-#    ports:
-#      - "5555:5432"
-#    volumes:
-#      - "postgres-data:/var/lib/postgresql/data"
-#      - "./init-scripts:/docker-entrypoint-initdb.d"
-#    environment:
-#      - "POSTGRES_PASSWORD=password"
-#      - "POSTGRES_USER=postgres"
-#      - "POSTGRES_DB=appointments"
-#    networks:
-#      - internal-net
-#
-# ktor-server:
-#    image: mokripat/ktor-server:latest
-#    depends_on:
-#      - postgres
-#    ports:
-#      - "8089:8080"
-#    environment:
-#      - DB_HOST=postgres
-#      - DB_PORT=5432
-#      - DB_NAME=appointments
-#      - DB_USER=postgres
-#      - DB_PASSWORD=password
-#      - KAFKA_BROKER=kafka:9092
-#      - EUREKA_URL=http://eureka-server:8761/eureka/v2
-#      - CONFIG_URL=http://config-server:8888
-#      - HOSTNAME=appointment-service
-#      - HOST_IP=host.docker.internal
-#      - SERVICE_PORT=8089
-#    labels:
-#      - "prometheus.port=8080"
-#      - "prometheus.path=/metrics"
-#    command: [ "java", "-jar", "/app/ktor-server.jar" ]
-#    restart: unless-stopped
-#    networks:
-#      - internal-net
-#      - shared-net
-#      - prometheus-network
+ postgres:
+    restart: unless-stopped
+    image: postgres:10
+    ports:
+      - "5555:5432"
+    volumes:
+      - "postgres-data-appointments:/var/lib/postgresql/data"
+      - "./init-scripts:/docker-entrypoint-initdb.d"
+    environment:
+      - "POSTGRES_PASSWORD=password"
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_DB=appointments"
+    networks:
+      - internal-net
+
+ ktor-server:
+    image: mokripat/ktor-server:latest
+    depends_on:
+      - postgres
+      - config-server
+      - kafka
+    ports:
+      - "8089:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=appointments
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - KAFKA_BROKER=kafka:9092
+      - EUREKA_URL=http://eureka-server:8761/eureka/v2
+      - CONFIG_URL=http://config-server:8888
+      - HOSTNAME=appointment-service
+      - HOST_IP=host.docker.internal
+      - SERVICE_PORT=8089
+    labels:
+      - "prometheus.port=8080"
+      - "prometheus.path=/metrics"
+    command: [ "java", "-jar", "/app/ktor-server.jar" ]
+    restart: unless-stopped
+    networks:
+      - internal-net
+      - shared-net
+      - prometheus-network
 
  billing-service:
    image: lukesdan/myapp:latest
@@ -312,8 +314,9 @@ services:
 
 volumes:
     grafana-data:
-    postgres-data:
+    postgres-data-notifications:
     mongodb_data:
+    postgres-data-appointments:
 
 networks:
   internal-net:
