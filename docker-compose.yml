@@ -41,14 +41,15 @@ services:
 
  fluentd:
     container_name: fluentd
-    build: ./fluentd/fluentd
+#    build: ./fluentd/fluentd
+    image: andrei839/swa_fluentd
     restart: always
     ports:
       - "24224:24224"
     networks:
       - fluentd-net
     volumes:
-      - ./fluentd/fluentd/conf:/fluentd/etc
+      - fluentd:/fluentd/etc
 
  elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
@@ -92,7 +93,7 @@ services:
         ports:
             - "9090:9090"
         volumes:
-            - ./performance-metrics/prometheus.yml:/etc/prometheus/prometheus.yml
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml
             - /var/run/docker.sock:/var/run/docker.sock  # 👈 This is the important part
 
         networks:
@@ -319,6 +320,7 @@ volumes:
     postgres-data-notifications:
     mongodb_data:
     postgres-data-appointments:
+    fluentd:
 
 networks:
   internal-net:
