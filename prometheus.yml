@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: 'docker-services'
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+    relabel_configs:
+
+      - source_labels: [ __meta_docker_container_label_prometheus_path ]
+        regex: .+
+        action: keep
+
+      - source_labels: [ __meta_docker_network_name ]
+        regex: prometheus-network
+        action: keep
+
+      - source_labels: [__meta_docker_container_name]
+        regex: /(.+)
+        target_label: container
+        replacement: "${1}"
+
+      # Set the 'job' label from prometheus_job label
+      - source_labels: [container]
+        target_label: job
+
+
+      # Build __address__ as service-name:port instead of IP
+      - source_labels: [ container, __meta_docker_container_label_prometheus_port ]
+        target_label: __address__
+        regex: (.+);(.+)
+        replacement: "${1}:${2}"
+
+
+      - source_labels: [ __meta_docker_container_label_prometheus_path ]
+        target_label: __metrics_path__
