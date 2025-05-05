@@ -169,7 +169,8 @@ services:
 
  notification-service:
    # TODO: USE PUBLISHED IMAGE
-   build: ./notification-service
+#   build: ./notification-service
+   image: andrei839/swa_notification_service
    depends_on:
      - notification-service-db
      - kafka
