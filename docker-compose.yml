@@ -241,8 +241,6 @@ services:
      - "8081:8081"
    depends_on:
      - postgres-billing
-     - kafka
-     - config-server
    environment:
      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-billing:5432/billingdb
      SPRING_DATASOURCE_USERNAME: user
@@ -254,13 +252,13 @@ services:
      - internal-net
      - shared-net
      - fluentd-net
-   logging:
-     driver: fluentd
-     options:
-       fluentd-address: "localhost:24224"
-       fluentd-async-connect: "true"
-       tag: docker
-
+     - prometheus-network
+   volumes:
+     - ./../logs:/var/log/app
+   labels:
+     - "prometheus.port=8081"
+     - "prometheus.path=/actuator/prometheus"
+     -
  postgres-billing:
    image: postgres:15
    container_name: billing-db
