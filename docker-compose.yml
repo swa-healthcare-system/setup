@@ -159,7 +159,7 @@ services:
      - "5556:5432"
    volumes:
      - "postgres-data-notifications:/var/lib/postgresql/data"
-     - "./init-scripts:/docker-entrypoint-initdb.d"
+     - "./init-scripts-notification:/docker-entrypoint-initdb.d"
    environment:
      - POSTGRES_URL=jdbc:postgresql://notification-service-db:5432/notifications
      - POSTGRES_PASSWORD=password
@@ -196,7 +196,7 @@ services:
       - "5555:5432"
     volumes:
       - "postgres-data-appointments:/var/lib/postgresql/data"
-      - "./init-scripts:/docker-entrypoint-initdb.d"
+      - "./init-scripts-appointments:/docker-entrypoint-initdb.d"
     environment:
       - "POSTGRES_PASSWORD=password"
       - "POSTGRES_USER=postgres"
@@ -210,6 +210,7 @@ services:
       - postgres
       - config-server
       - kafka
+      - eureka-server
     ports:
       - "8089:8080"
     environment:
