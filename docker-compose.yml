@@ -258,7 +258,7 @@ services:
    labels:
      - "prometheus.port=8081"
      - "prometheus.path=/actuator/prometheus"
-     -
+
  postgres-billing:
    image: postgres:15
    container_name: billing-db
