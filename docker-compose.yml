@@ -39,53 +39,53 @@ services:
    networks:
      - shared-net
 
-# fluentd:
-#    container_name: fluentd
-##    build: ./fluentd/fluentd
-#    image: andrei839/swa_fluentd
-#    restart: always
-#    ports:
-#      - "24224:24224"
-#    networks:
-#      - fluentd-net
-#    volumes:
-#      - fluentd:/fluentd/etc
-#
-# elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
-#    container_name: elasticsearch
-#    environment:
-#      - discovery.type=single-node
-#      - xpack.security.enabled=false
-#    ports:
-#      - "9200:9200"
-#    networks:
-#      - fluentd-net
+ fluentd:
+    container_name: fluentd
+#    build: ./fluentd/fluentd
+    image: andrei839/swa_fluentd
+    restart: always
+    ports:
+      - "24224:24224"
+    networks:
+      - fluentd-net
+    volumes:
+      - fluentd:/fluentd/etc
 
-# kibana:
-#    image: docker.elastic.co/kibana/kibana:7.17.13
-#    container_name: kibana
-#    ports:
-#      - "5601:5601"
-#    environment:
-#      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-#    networks:
-#      - fluentd-net
+ elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    networks:
+      - fluentd-net
 
-# eureka-server:
-##    build:
-##      context: ./eureka-server
-##      dockerfile: Dockerfile
-#    container_name: eureka-server
-#    image: andrei839/swa_eureka_server:latest
-#    ports:
-#      - "8761:8761"
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#      - JAVA_OPTS=
-#    networks:
-#      - shared-net
-#
+ kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.13
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - fluentd-net
+
+ eureka-server:
+#    build:
+#      context: ./eureka-server
+#      dockerfile: Dockerfile
+    container_name: eureka-server
+    image: andrei839/swa_eureka_server:latest
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=
+    networks:
+      - shared-net
+
  prometheus:
         image: prom/prometheus
         user: "0"  # 👈 Runs as root
@@ -153,167 +153,167 @@ services:
       - ./../logs:/var/log/app
 
 
-# notification-service-db:
-#   restart: unless-stopped
-#   image: postgres:10
-#   ports:
-#     - "5556:5432"
-#   volumes:
-#     - "postgres-data-notifications:/var/lib/postgresql/data"
-#     - "./init-scripts-notification:/docker-entrypoint-initdb.d"
-#   environment:
-#     - POSTGRES_URL=jdbc:postgresql://notification-service-db:5432/notifications
-#     - POSTGRES_PASSWORD=password
-#     - POSTGRES_USER=postgres
-#     - POSTGRES_DB=notifications
-#   networks:
-#     - internal-net
-#
-# notification-service:
-#   # TODO: USE PUBLISHED IMAGE
-##   build: ./notification-service
-#   image: andrei839/swa_notification_service
-#   depends_on:
-#     - notification-service-db
-#     - kafka
-#     - config-server
-#   ports:
-#     - "8073:8080"
-#   environment:
-#     EUREKA_URL: http://eureka-server:8761/eureka
-#     SPRING_PROFILES_ACTIVE: default
-#     SPRING_DATASOURCE_URL: jdbc:postgresql://notification-service-db:5432/notifications
-#     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-#   restart: unless-stopped
-#   networks:
-#     - internal-net
-#     - shared-net
-#
-##TODO fix appointment service database problem
-# postgres:
-#    restart: unless-stopped
-#    image: postgres:10
-#    ports:
-#      - "5555:5432"
-#    volumes:
-#      - "postgres-data-appointments:/var/lib/postgresql/data"
-#      - "./init-scripts-appointments:/docker-entrypoint-initdb.d"
-#    environment:
-#      - "POSTGRES_PASSWORD=password"
-#      - "POSTGRES_USER=postgres"
-#      - "POSTGRES_DB=appointments"
-#    networks:
-#      - internal-net
-#
-# ktor-server:
-#    image: mokripat/ktor-server:latest
-#    depends_on:
-#      - postgres
-#      - config-server
-#      - kafka
-#      - eureka-server
-#    ports:
-#      - "8089:8080"
-#    environment:
-#      - DB_HOST=postgres
-#      - DB_PORT=5432
-#      - DB_NAME=appointments
-#      - DB_USER=postgres
-#      - DB_PASSWORD=password
-#      - KAFKA_BROKER=kafka:9092
-#      - EUREKA_URL=http://eureka-server:8761/eureka/v2
-#      - CONFIG_URL=http://config-server:8888
-#      - HOSTNAME=appointment-service
-#      - HOST_IP=host.docker.internal
-#      - SERVICE_PORT=8089
-#    labels:
-#      - "prometheus.port=8080"
-#      - "prometheus.path=/metrics"
-#    command: [ "java", "-jar", "/app/ktor-server.jar" ]
-#    restart: unless-stopped
-#    networks:
-#      - internal-net
-#      - shared-net
-#      - prometheus-network
-#
-# billing-service:
-#   image: lukesdan/myapp:latest
-#   container_name: billing-service
-#   ports:
-#     - "8081:8081"
-#   depends_on:
-#     - postgres-billing
-#   environment:
-#     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-billing:5432/billingdb
-#     SPRING_DATASOURCE_USERNAME: user
-#     SPRING_DATASOURCE_PASSWORD: password
-#     SPRING_JPA_HIBERNATE_DDL_AUTO: update
-#     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-#     SPRING_EUREKA_URL: http://eureka-server:8761/eureka
-#   networks:
-#     - internal-net
-#     - shared-net
-#     - fluentd-net
-#     - prometheus-network
-#   volumes:
-#     - ./../logs:/var/log/app
-#   labels:
-#     - "prometheus.port=8081"
-#     - "prometheus.path=/actuator/prometheus"
-#
-# postgres-billing:
-#   image: postgres:15
-#   container_name: billing-db
-#   restart: always
-#   environment:
-#     POSTGRES_DB: billingdb
-#     POSTGRES_USER: user
-#     POSTGRES_PASSWORD: password
-#   ports:
-#     - "5432:5432"
-#   networks:
-#     - internal-net
-#
-# # MongoDB Service
-# mongodb:
-#   image: mongo:4.4
-#   container_name: mongodb
-#   ports:
-#     - "27017:27017"
-#   volumes:
-#     - mongodb_data:/data/db
-#   networks:
-#     - mongo
-#
-#     # Quarkus Java Application Service
-# patient-service:
-##   build:
-##     context: .  # Set build context to the root directory of your project
-##     dockerfile: Dockerfile.jvm  # Path to the Dockerfile
-#   container_name: patient-service
-#   image: shakuspyr/patient-service:latest  # <-- This is the image name
-#   environment:
-#     - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017/?directConnection=true
-#     - QUARKUS_MONGODB_DATABASE=patient-service
-#     - QUARKUS_LIVE_RELOAD=true
-#     - KAFKA_URI=kafka:9092
-#     - EUREKA_URL=http://eureka-server:8761/eureka/v2
-#     - HOSTNAME=appointment-service
-#     - HOST_IP=host.docker.internal
-#     - SERVICE_PORT=8008
-#   ports:
-#     - "8008:8008"
-#   labels:
-#     - "prometheus.port=8008"
-#     - "prometheus.path=/q/metrics"
-#   depends_on:
-#     - mongodb
-#     - kafka
-#     - config-server
-#   networks:
-#     - kafka-network
-#     - prometheus-network
-#     - mongo
+ notification-service-db:
+   restart: unless-stopped
+   image: postgres:10
+   ports:
+     - "5556:5432"
+   volumes:
+     - "postgres-data-notifications:/var/lib/postgresql/data"
+     - "./init-scripts-notification:/docker-entrypoint-initdb.d"
+   environment:
+     - POSTGRES_URL=jdbc:postgresql://notification-service-db:5432/notifications
+     - POSTGRES_PASSWORD=password
+     - POSTGRES_USER=postgres
+     - POSTGRES_DB=notifications
+   networks:
+     - internal-net
+
+ notification-service:
+   # TODO: USE PUBLISHED IMAGE
+#   build: ./notification-service
+   image: andrei839/swa_notification_service
+   depends_on:
+     - notification-service-db
+     - kafka
+     - config-server
+   ports:
+     - "8073:8080"
+   environment:
+     EUREKA_URL: http://eureka-server:8761/eureka
+     SPRING_PROFILES_ACTIVE: default
+     SPRING_DATASOURCE_URL: jdbc:postgresql://notification-service-db:5432/notifications
+     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+   restart: unless-stopped
+   networks:
+     - internal-net
+     - shared-net
+
+#TODO fix appointment service database problem
+ postgres:
+    restart: unless-stopped
+    image: postgres:10
+    ports:
+      - "5555:5432"
+    volumes:
+      - "postgres-data-appointments:/var/lib/postgresql/data"
+      - "./init-scripts-appointments:/docker-entrypoint-initdb.d"
+    environment:
+      - "POSTGRES_PASSWORD=password"
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_DB=appointments"
+    networks:
+      - internal-net
+
+ ktor-server:
+    image: mokripat/ktor-server:latest
+    depends_on:
+      - postgres
+      - config-server
+      - kafka
+      - eureka-server
+    ports:
+      - "8089:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=appointments
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - KAFKA_BROKER=kafka:9092
+      - EUREKA_URL=http://eureka-server:8761/eureka/v2
+      - CONFIG_URL=http://config-server:8888
+      - HOSTNAME=appointment-service
+      - HOST_IP=host.docker.internal
+      - SERVICE_PORT=8089
+    labels:
+      - "prometheus.port=8089"
+      - "prometheus.path=/metrics"
+    command: [ "java", "-jar", "/app/ktor-server.jar" ]
+    restart: unless-stopped
+    networks:
+      - internal-net
+      - shared-net
+      - prometheus-network
+
+ billing-service:
+   image: lukesdan/myapp:latest
+   container_name: billing-service
+   ports:
+     - "8081:8081"
+   depends_on:
+     - postgres-billing
+   environment:
+     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-billing:5432/billingdb
+     SPRING_DATASOURCE_USERNAME: user
+     SPRING_DATASOURCE_PASSWORD: password
+     SPRING_JPA_HIBERNATE_DDL_AUTO: update
+     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+     SPRING_EUREKA_URL: http://eureka-server:8761/eureka
+   networks:
+     - internal-net
+     - shared-net
+     - fluentd-net
+     - prometheus-network
+   volumes:
+     - ./../logs:/var/log/app
+   labels:
+     - "prometheus.port=8081"
+     - "prometheus.path=/actuator/prometheus"
+
+ postgres-billing:
+   image: postgres:15
+   container_name: billing-db
+   restart: always
+   environment:
+     POSTGRES_DB: billingdb
+     POSTGRES_USER: user
+     POSTGRES_PASSWORD: password
+   ports:
+     - "5432:5432"
+   networks:
+     - internal-net
+
+ # MongoDB Service
+ mongodb:
+   image: mongo:4.4
+   container_name: mongodb
+   ports:
+     - "27017:27017"
+   volumes:
+     - mongodb_data:/data/db
+   networks:
+     - mongo
+
+     # Quarkus Java Application Service
+ patient-service:
+#   build:
+#     context: .  # Set build context to the root directory of your project
+#     dockerfile: Dockerfile.jvm  # Path to the Dockerfile
+   container_name: patient-service
+   image: shakuspyr/patient-service:latest  # <-- This is the image name
+   environment:
+     - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017/?directConnection=true
+     - QUARKUS_MONGODB_DATABASE=patient-service
+     - QUARKUS_LIVE_RELOAD=true
+     - KAFKA_URI=kafka:9092
+     - EUREKA_URL=http://eureka-server:8761/eureka/v2
+     - HOSTNAME=appointment-service
+     - HOST_IP=host.docker.internal
+     - SERVICE_PORT=8008
+   ports:
+     - "8008:8008"
+   labels:
+     - "prometheus.port=8008"
+     - "prometheus.path=/q/metrics"
+   depends_on:
+     - mongodb
+     - kafka
+     - config-server
+   networks:
+     - kafka-network
+     - prometheus-network
+     - mongo
 
 volumes:
     grafana-data:
