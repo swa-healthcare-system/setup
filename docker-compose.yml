@@ -142,8 +142,8 @@ services:
     ports:
       - "8092:8092"
     labels:
-      - "prometheus.port=8092"
-      - "prometheus.path=/actuator/prometheus"
+        prometheus.port: "8092"
+        prometheus.path: "/actuator/prometheus"
     networks:
       - internal-net
       - kafka-network
@@ -205,7 +205,7 @@ services:
     networks:
       - internal-net
 
- ktor-server:
+ appointment-service:
     image: mokripat/ktor-server:latest
     depends_on:
       - postgres
@@ -227,8 +227,8 @@ services:
       - HOST_IP=host.docker.internal
       - SERVICE_PORT=8089
     labels:
-      - "prometheus.port=8089"
-      - "prometheus.path=/metrics"
+        prometheus.port: "8089"
+        prometheus.path: "/metrics"
     command: [ "java", "-jar", "/app/ktor-server.jar" ]
     restart: unless-stopped
     networks:
@@ -258,8 +258,8 @@ services:
    volumes:
      - ./../logs:/var/log/app
    labels:
-     - "prometheus.port=8081"
-     - "prometheus.path=/actuator/prometheus"
+       prometheus.port: "8081"
+       prometheus.path: "/actuator/prometheus"
 
  postgres-billing:
    image: postgres:15
@@ -304,8 +304,8 @@ services:
    ports:
      - "8008:8008"
    labels:
-     - "prometheus.port=8008"
-     - "prometheus.path=/q/metrics"
+       prometheus.port: "8008"
+       prometheus.path: "/q/metrics"
    depends_on:
      - mongodb
      - kafka

@@ -10,10 +10,6 @@ scrape_configs:
         regex: .+
         action: keep
 
-      - source_labels: [ __meta_docker_network_name ]
-        regex: prometheus-network
-        action: keep
-
       - source_labels: [__meta_docker_container_name]
         regex: /(.+)
         target_label: container
