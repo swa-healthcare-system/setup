@@ -39,18 +39,6 @@ services:
    networks:
      - shared-net
 
- fluentd:
-    container_name: fluentd
-#    build: ./fluentd/fluentd
-    image: andrei839/swa_fluentd
-    restart: always
-    ports:
-      - "24224:24224"
-    networks:
-      - fluentd-net
-    volumes:
-      - fluentd:/fluentd/etc
-
  elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
     container_name: elasticsearch
@@ -60,7 +48,7 @@ services:
     ports:
       - "9200:9200"
     networks:
-      - fluentd-net
+      - logging-net
 
  kibana:
     image: docker.elastic.co/kibana/kibana:7.17.13
@@ -70,7 +58,7 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     networks:
-      - fluentd-net
+      - logging-net
 
  eureka-server:
 #    build:
@@ -141,6 +129,12 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "8092:8092"
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "127.0.0.1:24228"
+        fluentd-async: "true"
+        tag: doctor-service
     labels:
         prometheus.port: "8092"
         prometheus.path: "/actuator/prometheus"
@@ -148,9 +142,21 @@ services:
       - internal-net
       - kafka-network
       - prometheus-network
-      - fluentd-net
+      - logging-net
     volumes:
-      - ./../logs:/var/log/app
+      - /var/run/docker.sock:/var/run/docker.sock
+
+ fluentd-doctor:
+   build:
+     context: .
+     dockerfile: ./fluentd/Dockerfile
+   container_name: fluentd-doctor
+   volumes:
+     - ./fluentd/conf_doctor:/fluentd/etc
+   ports:
+     - "24228:24228"
+   networks:
+     - logging-net
 
 
  notification-service-db:
@@ -172,7 +178,7 @@ services:
  notification-service:
    # TODO: USE PUBLISHED IMAGE
 #   build: ./notification-service
-   image: andrei839/swa_notification_service
+   image: andrei839/swa_notification_service:latest
    depends_on:
      - notification-service-db
      - kafka
@@ -185,9 +191,30 @@ services:
      SPRING_DATASOURCE_URL: jdbc:postgresql://notification-service-db:5432/notifications
      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
    restart: unless-stopped
+   logging:
+      driver: fluentd
+      options:
+        fluentd-address: "127.0.0.1:24225"
+        fluentd-async: "true"
+        tag: notification-service
+   volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
    networks:
      - internal-net
      - shared-net
+     - logging-net
+
+ fluentd-notification:
+    build:
+      context: .
+      dockerfile: ./fluentd/Dockerfile
+    container_name: fluentd-notification
+    volumes:
+      - ./fluentd/conf_notification:/fluentd/etc
+    ports:
+      - "24225:24225"
+    networks:
+      - logging-net
 
 #TODO fix appointment service database problem
  postgres:
@@ -230,11 +257,32 @@ services:
         prometheus.port: "8089"
         prometheus.path: "/metrics"
     command: [ "java", "-jar", "/app/ktor-server.jar" ]
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "127.0.0.1:24227"
+        fluentd-async: "true"
+        tag: appointment-service
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     networks:
       - internal-net
       - shared-net
       - prometheus-network
+      - logging-net
+
+ fluentd-appointment:
+   build:
+     context: .
+     dockerfile: ./fluentd/Dockerfile
+   container_name: fluentd-appointment
+   volumes:
+     - ./fluentd/conf_appointment:/fluentd/etc
+   ports:
+     - "24227:24227"
+   networks:
+     - logging-net
 
  billing-service:
    image: lukesdan/myapp:latest
@@ -250,13 +298,19 @@ services:
      SPRING_JPA_HIBERNATE_DDL_AUTO: update
      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
      SPRING_EUREKA_URL: http://eureka-server:8761/eureka
+   logging:
+     driver: fluentd
+     options:
+       fluentd-address: "127.0.0.1:24224"
+       fluentd-async: "true"
+       tag: billing-service
    networks:
      - internal-net
      - shared-net
-     - fluentd-net
+     - logging-net
      - prometheus-network
    volumes:
-     - ./../logs:/var/log/app
+     - /var/run/docker.sock:/var/run/docker.sock
    labels:
        prometheus.port: "8081"
        prometheus.path: "/actuator/prometheus"
@@ -273,6 +327,18 @@ services:
      - "5432:5432"
    networks:
      - internal-net
+
+ fluentd-billing:
+   build:
+    context: ./fluentd
+    dockerfile: Dockerfile
+   container_name: fluentd-billing
+   volumes:
+     - ./fluentd/conf_billing:/fluentd/etc
+   ports:
+     - "24224:24224"
+   networks:
+     - logging-net
 
  # MongoDB Service
  mongodb:
@@ -303,6 +369,14 @@ services:
      - SERVICE_PORT=8008
    ports:
      - "8008:8008"
+   logging:
+     driver: fluentd
+     options:
+       fluentd-address: "127.0.0.1:24226"
+       fluentd-async: "true"
+       tag: patient-service
+   volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
    labels:
        prometheus.port: "8008"
        prometheus.path: "/q/metrics"
@@ -314,13 +388,25 @@ services:
      - kafka-network
      - prometheus-network
      - mongo
+     - logging-net
+
+ fluentd-patient:
+   build:
+     context: .
+     dockerfile: ./fluentd/Dockerfile
+   container_name: fluentd-patient
+   volumes:
+     - ./fluentd/conf_patient:/fluentd/etc
+   ports:
+     - "24226:24226"
+   networks:
+     - logging-net
 
 volumes:
     grafana-data:
     postgres-data-notifications:
     mongodb_data:
     postgres-data-appointments:
-    fluentd:
 
 networks:
   internal-net:
@@ -334,8 +420,8 @@ networks:
   prometheus-network:
     external: true
     name: prometheus-network
-  fluentd-net:
+  logging-net:
     external: true
-    name: fluentd-network
+    name: logging-network
   mongo:
     driver: bridge
